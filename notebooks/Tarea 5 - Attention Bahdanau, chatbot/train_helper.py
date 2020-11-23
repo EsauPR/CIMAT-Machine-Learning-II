@@ -120,30 +120,14 @@ def sequence_loss(y_pred, y_true, mask_index):
     return F.cross_entropy(y_pred, y_true, ignore_index=mask_index)
 
 
-def sentence_from_indices(indices, vocab, strict=True, return_string=True):
-    ignore_indices = set([vocab.mask_index, vocab.begin_seq_index, vocab.end_seq_index])
-    out = []
-    for index in indices:
-        if index == vocab.begin_seq_index and strict:
-            continue
-        elif index == vocab.end_seq_index and strict:
-            break
-        else:
-            out.append(vocab.lookup_index(index))
-    if return_string:
-        return " ".join(out)
-    else:
-        return out
-
-
 def get_source_sentence(vectorizer, batch_dict, index):
     indices = batch_dict['x_source'][index].cpu().data.numpy()
     vocab = vectorizer.source_vocab
-    return sentence_from_indices(indices, vocab)
+    return sentence_from_indices2(indices, vocab)
 
 
 def get_true_sentence(vectorizer, batch_dict, index):
-    return sentence_from_indices(batch_dict['y_target'].cpu().data.numpy()[index], vectorizer.target_vocab)
+    return sentence_from_indices2(batch_dict['y_target'].cpu().data.numpy()[index], vectorizer.target_vocab)
 
 
 def get_sampled_sentence(model, vectorizer, batch_dict, index):
@@ -151,7 +135,7 @@ def get_sampled_sentence(model, vectorizer, batch_dict, index):
                    x_source_lengths=batch_dict['x_source_length'],
                    target_sequence=batch_dict['x_target'],
                    sample_probability=1.0)
-    return sentence_from_indices(torch.max(y_pred, dim=2)[1].cpu().data.numpy()[index], vectorizer.target_vocab)
+    return sentence_from_indices2(torch.max(y_pred, dim=2)[1].cpu().data.numpy()[index], vectorizer.target_vocab)
 
 
 def get_all_sentences(model, vectorizer, batch_dict, index):
@@ -160,7 +144,7 @@ def get_all_sentences(model, vectorizer, batch_dict, index):
             "sampled": get_sampled_sentence(model, vectorizer, batch_dict, index)}
 
 
-def sentence_from_indices(indices, vocab, strict=True):
+def sentence_from_indices2(indices, vocab, strict=True):
     ignore_indices = set([vocab.mask_index, vocab.begin_seq_index, vocab.end_seq_index])
     out = []
     for index in indices:
